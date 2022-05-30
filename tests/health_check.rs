@@ -1,9 +1,10 @@
 use reqwest::StatusCode;
-use std::net::TcpListener;
+
+mod utils;
 
 #[tokio::test]
 async fn health_check_should_return_ok() {
-    let address = spawn_app();
+    let address = utils::spawn_app();
 
     let client = reqwest::Client::new();
 
@@ -16,19 +17,6 @@ async fn health_check_should_return_ok() {
     let response_status = response.status();
     let response_body = response.text().await.expect("Error getting response body");
 
-    assert_eq!(response_status, StatusCode::OK);
-    assert_eq!(response_body, "{ \"status\": \"UP\" }")
-}
-
-fn spawn_app() -> String {
-    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind to a random port");
-
-    let port = listener.local_addr().unwrap().port();
-
-    let server =
-        email_newsletter::run(listener).expect("failed to build `Email Newsletter` server");
-
-    let _ = tokio::spawn(server);
-
-    format!("http://127.0.0.1:{}", port)
+    assert_eq!(StatusCode::OK, response_status);
+    assert_eq!(r#"{ "status": "UP" }"#, response_body)
 }
